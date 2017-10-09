@@ -3,6 +3,7 @@ package org.training.hadoop.hive;
 import java.sql.*;
 
 /**
+ * Hive JDBC
  * Created by qianxi.zhang on 6/7/17.
  */
 public class HiveExample {

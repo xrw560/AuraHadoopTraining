@@ -8,24 +8,31 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.io.IOException;
 
 public class GetFromHBase {
-  public static void get(Configuration conf) throws IOException {
-    Connection connection = null;
+    /**
+     * 读取⼀⾏数据
+     */
+    public static void get(Configuration conf) throws IOException {
+        Connection connection = null;
 
-    connection = ConnectionFactory.createConnection(conf);
+        connection = ConnectionFactory.createConnection(conf);
 
-    Table table = connection.getTable(TableName.valueOf(TableInformation.TABLE_NAME));
-    Get get = new Get(Bytes.toBytes("row1"));
-    get.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_1), Bytes.toBytes(TableInformation.QUALIFIER_NAME_1_1));
-    get.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_2), Bytes.toBytes(TableInformation.QUALIFIER_NAME_2_1));
-    Result result = table.get(get);
-    while (result.advance()) {
-      System.out.println(result.current());
+        Table table = connection.getTable(TableName.valueOf(TableInformation.TABLE_NAME));
+        //构造对象传⼊⾏键key
+        Get get = new Get(Bytes.toBytes("row1"));
+        //加⼊需要访问的列
+        get.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_1), Bytes.toBytes(TableInformation.QUALIFIER_NAME_1_1));
+        get.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_2), Bytes.toBytes(TableInformation.QUALIFIER_NAME_2_1));
+        //发送请求， 获得Result
+        Result result = table.get(get);
+        //遍历结果
+        while (result.advance()) {
+            System.out.println(result.current());
+        }
+        table.close();
+        connection.close();
     }
-    table.close();
-    connection.close();
-  }
 
-  public static void main(String[] args) throws IOException {
-    GetFromHBase.get(TableInformation.getHBaseConfiguration());
-  }
+    public static void main(String[] args) throws IOException {
+        GetFromHBase.get(TableInformation.getHBaseConfiguration());
+    }
 }
