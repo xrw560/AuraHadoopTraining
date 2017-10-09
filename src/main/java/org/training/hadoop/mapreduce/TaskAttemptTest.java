@@ -19,69 +19,69 @@ import java.io.IOException;
 import java.util.StringTokenizer;
 
 public class TaskAttemptTest extends Configured implements Tool {
-  public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
+    public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
 
-    private final static IntWritable one = new IntWritable(1);
-    private Text word = new Text();
+        private final static IntWritable one = new IntWritable(1);
+        private Text word = new Text();
 
-    public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-      //get the task attempt id
-      //for the 4 previous attempt for the task, the attempt always fails.
-      int id = context.getTaskAttemptID().getId();
-      System.out.println("id:" + id);
-      if (id < 4)
-        System.exit(-1);
-      StringTokenizer itr = new StringTokenizer(value.toString());
-      while (itr.hasMoreTokens()) {
-        word.set(itr.nextToken());
-        context.write(word, one);
-      }
-    }
-  }
-
-  public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-    private IntWritable result = new IntWritable();
-
-    public void reduce(Text key, Iterable<IntWritable> values, Context context)
-        throws IOException, InterruptedException {
-      int sum = 0;
-      for (IntWritable val : values) {
-        sum += val.get();
-      }
-      result.set(sum);
-      context.write(key, result);
-    }
-  }
-
-  public int run(String[] args) throws Exception {
-    Configuration conf = getConf();
-    String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-    if (otherArgs.length < 2) {
-      System.err.println("Usage: word count attempt test <in> [<in>...] <out>");
-      System.exit(2);
-    }
-    Job job = new Job(conf, "word count attempt test");
-    job.setJarByClass(TaskAttemptTest.class);
-    job.setMapperClass(TokenizerMapper.class);
-    job.setCombinerClass(IntSumReducer.class);
-    job.setReducerClass(IntSumReducer.class);
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(IntWritable.class);
-    for (int i = 0; i < otherArgs.length - 1; ++i) {
-      FileInputFormat.addInputPath(job, new Path(otherArgs[i]));
+        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            //get the task attempt id
+            //for the 4 previous attempt for the task, the attempt always fails.
+            int id = context.getTaskAttemptID().getId();
+            System.out.println("id:" + id);
+            if (id < 4)
+                System.exit(-1);
+            StringTokenizer itr = new StringTokenizer(value.toString());
+            while (itr.hasMoreTokens()) {
+                word.set(itr.nextToken());
+                context.write(word, one);
+            }
+        }
     }
 
-    Path outputPath = new Path(otherArgs[1]);
+    public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+        private IntWritable result = new IntWritable();
 
-    outputPath.getFileSystem(conf).delete(outputPath);
+        public void reduce(Text key, Iterable<IntWritable> values, Context context)
+                throws IOException, InterruptedException {
+            int sum = 0;
+            for (IntWritable val : values) {
+                sum += val.get();
+            }
+            result.set(sum);
+            context.write(key, result);
+        }
+    }
 
-    FileOutputFormat.setOutputPath(job, new Path(otherArgs[otherArgs.length - 1]));
-    return job.waitForCompletion(true) ? 0 : 1;
-  }
+    public int run(String[] args) throws Exception {
+        Configuration conf = getConf();
+        String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+        if (otherArgs.length < 2) {
+            System.err.println("Usage: word count attempt test <in> [<in>...] <out>");
+            System.exit(2);
+        }
+        Job job = new Job(conf, "word count attempt test");
+        job.setJarByClass(TaskAttemptTest.class);
+        job.setMapperClass(TokenizerMapper.class);
+        job.setCombinerClass(IntSumReducer.class);
+        job.setReducerClass(IntSumReducer.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+        for (int i = 0; i < otherArgs.length - 1; ++i) {
+            FileInputFormat.addInputPath(job, new Path(otherArgs[i]));
+        }
 
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new Configuration(), new TaskAttemptTest(), args);
-    System.exit(res);
-  }
+        Path outputPath = new Path(otherArgs[1]);
+
+        outputPath.getFileSystem(conf).delete(outputPath);
+
+        FileOutputFormat.setOutputPath(job, new Path(otherArgs[otherArgs.length - 1]));
+        return job.waitForCompletion(true) ? 0 : 1;
+    }
+
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(new Configuration(), new TaskAttemptTest(), args);
+        System.exit(res);
+    }
 }
 

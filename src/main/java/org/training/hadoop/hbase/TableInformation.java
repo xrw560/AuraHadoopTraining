@@ -14,51 +14,53 @@ import java.io.IOException;
 
 public class TableInformation {
 
-  public static final String TABLE_NAME = "scores";
-  public static final String FAMILY_NAME_1 = "course";
-  public static final String FAMILY_NAME_2 = "profile";
-  public static final String QUALIFIER_NAME_1_1 = "math";
-  public static final String QUALIFIER_NAME_1_2 = "art";
-  public static final String QUALIFIER_NAME_2_1 = "gender";
-  public static final String QUALIFIER_NAME_2_2 = "name";
+    public static final String TABLE_NAME = "scores";
+    public static final String FAMILY_NAME_1 = "course";
+    public static final String FAMILY_NAME_2 = "profile";
+    public static final String QUALIFIER_NAME_1_1 = "math";
+    public static final String QUALIFIER_NAME_1_2 = "art";
+    public static final String QUALIFIER_NAME_2_1 = "gender";
+    public static final String QUALIFIER_NAME_2_2 = "name";
 
-  public static Configuration getHBaseConfiguration() {
-    Configuration conf = HBaseConfiguration.create();
-    conf.set("hbase.zookeeper.quorum",
-        "bigdata");
-    conf.set("zookeeper.znode.parent", "/hbase");
+    public static Configuration getHBaseConfiguration() {
+        Configuration conf = HBaseConfiguration.create();
+        //包含各种配置信息Zookeeper地址
+        conf.set("hbase.zookeeper.quorum", "bigdata");
+        //HBase信息在Zookeeper上的⽬录位置
+        conf.set("zookeeper.znode.parent", "/hbase");
 
-    return conf;
-  }
-
-  public static void createTable(Configuration conf) throws IOException {
-    Connection connection = ConnectionFactory.createConnection(conf);
-    Admin admin = connection.getAdmin();
-
-    if (!admin.tableExists(TableName.valueOf(TABLE_NAME))) {
-      HTableDescriptor tableDescriptor = new HTableDescriptor(TableName.valueOf(TABLE_NAME));
-      HColumnDescriptor columnDescriptor_1 = new HColumnDescriptor(Bytes.toBytes(FAMILY_NAME_1));
-      HColumnDescriptor columnDescriptor_2 = new HColumnDescriptor(Bytes.toBytes(FAMILY_NAME_2));
-      tableDescriptor.addFamily(columnDescriptor_1);
-      tableDescriptor.addFamily(columnDescriptor_2);
-      admin.createTable(tableDescriptor);
+        return conf;
     }
-  }
 
-  public static void deleteTable(Configuration conf) throws IOException {
-    Connection connection = ConnectionFactory.createConnection(conf);
-    Admin admin = connection.getAdmin();
-    if (admin.tableExists(TableName.valueOf(TABLE_NAME))) {
-      if (!admin.isTableDisabled(TableName.valueOf(TABLE_NAME))) {
-        admin.disableTable(TableName.valueOf(TABLE_NAME));
-      }
-      admin.deleteTable(TableName.valueOf(TABLE_NAME));
+    public static void createTable(Configuration conf) throws IOException {
+        //Connection 封装了客户端到整个集群的连接
+        Connection connection = ConnectionFactory.createConnection(conf);
+        Admin admin = connection.getAdmin();
+
+        if (!admin.tableExists(TableName.valueOf(TABLE_NAME))) {
+            HTableDescriptor tableDescriptor = new HTableDescriptor(TableName.valueOf(TABLE_NAME));
+            HColumnDescriptor columnDescriptor_1 = new HColumnDescriptor(Bytes.toBytes(FAMILY_NAME_1));
+            HColumnDescriptor columnDescriptor_2 = new HColumnDescriptor(Bytes.toBytes(FAMILY_NAME_2));
+            tableDescriptor.addFamily(columnDescriptor_1);
+            tableDescriptor.addFamily(columnDescriptor_2);
+            admin.createTable(tableDescriptor);
+        }
     }
-  }
 
-  public static void main(String args[]) throws IOException {
-    TableInformation.createTable(TableInformation.getHBaseConfiguration());
-  }
+    public static void deleteTable(Configuration conf) throws IOException {
+        Connection connection = ConnectionFactory.createConnection(conf);
+        Admin admin = connection.getAdmin();
+        if (admin.tableExists(TableName.valueOf(TABLE_NAME))) {
+            if (!admin.isTableDisabled(TableName.valueOf(TABLE_NAME))) {
+                admin.disableTable(TableName.valueOf(TABLE_NAME));
+            }
+            admin.deleteTable(TableName.valueOf(TABLE_NAME));
+        }
+    }
+
+    public static void main(String args[]) throws IOException {
+        TableInformation.createTable(TableInformation.getHBaseConfiguration());
+    }
 
 }
 

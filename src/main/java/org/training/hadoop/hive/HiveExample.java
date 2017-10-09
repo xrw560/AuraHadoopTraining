@@ -7,34 +7,34 @@ import java.sql.*;
  */
 public class HiveExample {
 
-  private static String driverName = "org.apache.hive.jdbc.HiveDriver";
+    private static String driverName = "org.apache.hive.jdbc.HiveDriver";
 
-  public void process() throws SQLException {
-    try {
-      Class.forName(driverName);
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-      System.exit(1);
+    public void process() throws SQLException {
+        try {
+            Class.forName(driverName);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        Connection con = DriverManager.getConnection(
+                "jdbc:hive2://bigdata:10000/default", "bigdata", "bigdata");
+
+        Statement stmt = con.createStatement();
+        long startTime = System.currentTimeMillis();
+        String sql = "show tables";
+        ResultSet res = stmt.executeQuery(sql);
+        int count = 0;
+        while (res.next()) {
+            count++;
+            System.out.println(res.getString(1));
+        }
+        long stopTime = System.currentTimeMillis();
+        System.out.println("time: " + (stopTime - startTime) + ", count : " + count);
     }
 
-    Connection con = DriverManager.getConnection(
-        "jdbc:hive2://bigdata:10000/default", "bigdata", "bigdata");
-
-    Statement stmt = con.createStatement();
-    long startTime = System.currentTimeMillis();
-    String sql = "show tables";
-    ResultSet res = stmt.executeQuery(sql);
-    int count = 0;
-    while (res.next()) {
-      count++;
-      System.out.println(res.getString(1));
+    public static void main(String[] args) throws SQLException {
+        HiveExample example = new HiveExample();
+        example.process();
     }
-    long stopTime = System.currentTimeMillis();
-    System.out.println("time: " + (stopTime - startTime) + ", count : " + count);
-  }
-
-  public static void main(String[] args) throws SQLException {
-    HiveExample example = new HiveExample();
-    example.process();
-  }
 }
