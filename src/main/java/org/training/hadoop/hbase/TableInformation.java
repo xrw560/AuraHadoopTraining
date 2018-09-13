@@ -25,7 +25,7 @@ public class TableInformation {
     public static Configuration getHBaseConfiguration() {
         Configuration conf = HBaseConfiguration.create();
         //包含各种配置信息Zookeeper地址
-        conf.set("hbase.zookeeper.quorum", "bigdata");
+        conf.set("hbase.zookeeper.quorum", "192.168.170.100");
         //HBase信息在Zookeeper上的⽬录位置
         conf.set("zookeeper.znode.parent", "/hbase");
 

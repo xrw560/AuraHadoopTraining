@@ -52,7 +52,7 @@ public class WriteToHBase {
             connection = ConnectionFactory.createConnection(conf);
             bufferedMutator = connection.getBufferedMutator(TableName.valueOf(TableInformation.TABLE_NAME));
             //describe the data
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 10; i++) {
                 Put put = new Put(Bytes.toBytes("row" + String.format("03%d", i)));
                 put.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_1), Bytes.toBytes(TableInformation.QUALIFIER_NAME_1_1), Bytes.toBytes(i));
                 put.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_1), Bytes.toBytes(TableInformation.QUALIFIER_NAME_1_2), Bytes.toBytes(i));
@@ -71,7 +71,7 @@ public class WriteToHBase {
     }
 
     public static void main(String[] args) throws IOException {
-        //WriteToHBase.put(TableInformation.getHBaseConfiguration());
+//        WriteToHBase.put(TableInformation.getHBaseConfiguration());
         WriteToHBase.asyncBatchPut(TableInformation.getHBaseConfiguration());
     }
 

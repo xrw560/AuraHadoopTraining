@@ -21,8 +21,8 @@ public class ScanFromHBase {
 
         Scan scan = new Scan();
         //设置起始和结束⾏键key， [start_key, stop_key)
-        scan.setStartRow(Bytes.toBytes("row1"));
-        scan.setStopRow(Bytes.toBytes("row11"));
+        scan.setStartRow(Bytes.toBytes("row030"));
+        scan.setStopRow(Bytes.toBytes("row039"));
         //加⼊需要访问的列
         scan.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_1), Bytes.toBytes(TableInformation.QUALIFIER_NAME_1_1));
         scan.addColumn(Bytes.toBytes(TableInformation.FAMILY_NAME_2), Bytes.toBytes(TableInformation.QUALIFIER_NAME_2_2));
