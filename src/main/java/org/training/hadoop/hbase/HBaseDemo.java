@@ -1,9 +1,10 @@
 package org.training.hadoop.hbase;
 
-import javafx.scene.control.Tab;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
+import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
 import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
@@ -12,7 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -168,6 +168,24 @@ public class HBaseDemo {
         Table table = connection.getTable(TableName.valueOf("t_book"));
         Delete delete = new Delete(Bytes.toBytes("row2"));
         table.delete(delete);
+    }
+
+    @Test
+    public void countTable() throws Throwable {
+        /**
+         * https://blog.csdn.net/m0_37739193/article/details/75286496
+         * 启用表aggregation，只对特定的表生效。通过hbase Shell 来实现。
+         * 1. disable 't_book'
+         * 2. alter 't_book', METHOD => 'table_att','coprocessor'=>'|org.apache.hadoop.hbase.coprocessor.AggregateImplementation||'
+         * 3. enable 't_book'
+         * 4. describe 't_book'
+         */
+        Configuration configuration = connection.getConfiguration();
+        AggregationClient aggregationClient = new AggregationClient(configuration);
+        Scan scan = new Scan();
+        long rowCount = aggregationClient.rowCount(TableName.valueOf("t_book"), new LongColumnInterpreter(), scan);
+        System.out.println(rowCount);
+
     }
 
 
