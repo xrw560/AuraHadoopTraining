@@ -5,9 +5,7 @@ import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
-import org.apache.hadoop.hbase.filter.CompareFilter;
-import org.apache.hadoop.hbase.filter.Filter;
-import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +27,7 @@ public class HBaseDemo {
         //取得一个数据库连接的配置参数对象
         Configuration conf = HBaseConfiguration.create();
         //设置连接参数：HBase数据库所在主机IP
-        conf.set("hbase.zookeeper.quorum", "192.168.170.100");
+        conf.set("hbase.zookeeper.quorum", "192.168.1.140");
 
         //设置连接参数：HBase连接使用端口
         conf.set("hbase.zookeeper.property.clientPort", "2181");
@@ -71,7 +69,8 @@ public class HBaseDemo {
 
         for (int i = 0; i < 10; i++) {
             put = new Put(Bytes.toBytes("row" + i));
-            put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("name"), Bytes.toBytes(String.valueOf(i)));
+            put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("name"), Bytes.toBytes(String.valueOf(i + "str")));
+            put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("age"), Bytes.toBytes(20 + i));
             putList.add(put);
         }
         table.put(putList);
@@ -107,7 +106,7 @@ public class HBaseDemo {
 
         Table table = connection.getTable(TableName.valueOf("t_book"));
 
-        Get get = new Get("row8".getBytes());
+        Get get = new Get("row0".getBytes());
         Result result = table.get(get);
         byte[] row = result.getRow();
         System.out.println("row key" + Bytes.toString(row));
@@ -153,6 +152,118 @@ public class HBaseDemo {
 
     }
 
+    @Test
+    public void valueFilter() throws IOException {
+
+        Table table = connection.getTable(TableName.valueOf("t_book"));
+
+        Scan scan = new Scan();
+//        Filter filter = new ValueFilter(CompareFilter.CompareOp.EQUAL, new SubstringComparator("6"));
+        Filter filter = new SingleColumnValueFilter(Bytes.toBytes("info"), Bytes.toBytes("name"), CompareFilter.CompareOp.EQUAL, new SubstringComparator("6"));
+        scan.setFilter(filter);
+
+        ResultScanner rs = table.getScanner(scan);
+
+        for (Result r : rs) {
+            String name = Bytes.toString(r.getValue(Bytes.toBytes("info"), Bytes.toBytes("name")));
+            System.out.println(name);
+        }
+        rs.close();
+
+    }
+
+    @Test
+    public void multiFilter() throws IOException {
+        Table table = connection.getTable(TableName.valueOf("t_book"));
+        Scan scan = new Scan();
+
+        //创建过滤器列表
+        FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+
+        //只有列族为info的记录才放入结果集
+        Filter familyFilter = new FamilyFilter(CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes("info")));
+        filterList.addFilter(familyFilter);
+
+        //只有列为name的记录才放入结果集
+        Filter colFilter = new QualifierFilter(CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes("name")));
+        filterList.addFilter(colFilter);
+
+        Filter valueFilter = new ValueFilter(CompareFilter.CompareOp.EQUAL, new SubstringComparator("6"));
+        filterList.addFilter(valueFilter);
+
+        scan.setFilter(filterList);
+
+        ResultScanner rs = table.getScanner(scan);
+        for (Result r : rs) {
+            String name = Bytes.toString(r.getValue(Bytes.toBytes("info"), Bytes.toBytes("name")));
+            System.out.println(name);
+        }
+        rs.close();
+    }
+
+    @Test
+    public void multiFilter2() throws IOException {
+
+        String family = "info";
+        Table table = connection.getTable(TableName.valueOf("t_book"));
+        Scan scan = new Scan();
+
+        //创建内层FilterList, 设置运算符为OR
+        FilterList innerFilterList = new FilterList(FilterList.Operator.MUST_PASS_ONE);
+
+        //找出
+        Filter in1Filter = new SingleColumnValueFilter(Bytes.toBytes(family), Bytes.toBytes("city"), CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes("xiamen")));
+        innerFilterList.addFilter(in1Filter);
+
+        Filter in2Filter = new SingleColumnValueFilter(Bytes.toBytes(family), Bytes.toBytes("city"), CompareFilter.CompareOp.EQUAL,
+                new BinaryComparator(Bytes.toBytes("shanghai")));
+        innerFilterList.addFilter(in2Filter);
+
+        //创建外层FilterList, 设置运算符为AND
+        FilterList outerFilterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
+        //将内层过滤器列表作为外层过滤器列表的第一个过滤器
+        outerFilterList.addFilter(outerFilterList);
+
+        //设置过滤条件为active='1
+        Filter activeFilter = new SingleColumnValueFilter(Bytes.toBytes(family), Bytes.toBytes("active"), CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes("1")));
+        outerFilterList.addFilter(activeFilter);
+
+        scan.setFilter(outerFilterList);
+
+        ResultScanner rs = table.getScanner(scan);
+        for (Result r : rs) {
+            String city = Bytes.toString(r.getValue(Bytes.toBytes(family), Bytes.toBytes("city")));
+            System.out.println(city);
+        }
+        rs.close();
+
+    }
+
+
+    @Test
+    public void pageFilter() throws IOException {
+        Table table = connection.getTable(TableName.valueOf("t_book"));
+
+        Scan scan = new Scan();
+        //设置分页为每页2条数据
+        Filter filter = new PageFilter(2);
+        scan.setFilter(filter);
+
+        //第一页
+        ResultScanner rs = table.getScanner(scan);
+
+        byte[] lastRowKey = printResult(rs);
+        rs.close();
+        System.out.println("现在打印第2页");
+        //为lastRowKey拼接上一个零字节
+        byte[] startRowKey = Bytes.add(lastRowKey, new byte[1]);
+        scan.setStartRow(startRowKey);
+        ResultScanner rs2 = table.getScanner(scan);
+        printResult(rs2);
+        rs2.close();
+
+    }
+
 
     @Test
     public void truncateTable() throws IOException {
@@ -188,5 +299,17 @@ public class HBaseDemo {
 
     }
 
+
+    private static byte[] printResult(ResultScanner rs) {
+        byte[] lastRowKey = null;
+        for (Result r : rs) {
+            byte[] rowkey = r.getRow();
+            String name = Bytes.toString(r.getValue(Bytes.toBytes("info"), Bytes.toBytes("name")));
+            int age = Bytes.toInt(r.getValue(Bytes.toBytes("info"), Bytes.toBytes("age")));
+            System.out.println(Bytes.toString(rowkey) + ": name=" + name + " age=" + age);
+            lastRowKey = rowkey;
+        }
+        return lastRowKey;
+    }
 
 }
