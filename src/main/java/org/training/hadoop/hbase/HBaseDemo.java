@@ -11,7 +11,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class HBaseDemo {
@@ -27,7 +29,7 @@ public class HBaseDemo {
         //取得一个数据库连接的配置参数对象
         Configuration conf = HBaseConfiguration.create();
         //设置连接参数：HBase数据库所在主机IP
-        conf.set("hbase.zookeeper.quorum", "192.168.1.140");
+        conf.set("hbase.zookeeper.quorum", "192.168.170.101");
 
         //设置连接参数：HBase连接使用端口
         conf.set("hbase.zookeeper.property.clientPort", "2181");
@@ -63,24 +65,26 @@ public class HBaseDemo {
     public void insert() throws IOException {
 
         System.out.println("插入数据。。。");
-        Table table = connection.getTable(TableName.valueOf("t_book"));
+        Table table = connection.getTable(TableName.valueOf("mytable"));
         ArrayList<Put> putList = new ArrayList<>();
         Put put;
-
-        for (int i = 0; i < 10; i++) {
-            put = new Put(Bytes.toBytes("row" + i));
-            put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("name"), Bytes.toBytes(String.valueOf(i + "str")));
-            put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("age"), Bytes.toBytes(20 + i));
-            putList.add(put);
-        }
-        table.put(putList);
+        put = new Put(Bytes.toBytes("row9"));
+        put.addColumn(Bytes.toBytes("mycf"),Bytes.toBytes("name"),6L,Bytes.toBytes("JACK"));
+//        for (int i = 0; i < 10; i++) {
+//            put = new Put(Bytes.toBytes("row" + i));
+//            put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("name"), Bytes.toBytes(String.valueOf(i + "str")));
+//            put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("age"), Bytes.toBytes(20 + i));
+//            putList.add(put);
+//        }
+//        table.put(putList);
+        table.put(put);
     }
 
     @Test
     public void queryTable() throws IOException {
         System.out.println("查询整表数据。。。");
 
-        Table table = connection.getTable(TableName.valueOf("t_book"));
+        Table table = connection.getTable(TableName.valueOf("mymoney"));
         ResultScanner scanner = table.getScanner(new Scan());
         for (Result result : scanner) {
             byte[] row = result.getRow();
@@ -92,6 +96,8 @@ public class HBaseDemo {
                 String family = Bytes.toString(cell.getFamilyArray(), cell.getFamilyOffset(), cell.getFamilyLength());
                 String qualifier = Bytes.toString(cell.getQualifierArray(), cell.getQualifierOffset(), cell.getQualifierLength());
                 String value = Bytes.toString(cell.getValueArray(), cell.getValueOffset(), cell.getValueLength());
+                long timestamp = cell.getTimestamp();
+                System.out.println(stampToDate(timestamp));
 
                 System.out.println("row values is : " + family + ":" + qualifier + " " + value);
 
@@ -311,5 +317,11 @@ public class HBaseDemo {
         }
         return lastRowKey;
     }
-
+    private static String stampToDate(long s){
+        String res;
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date(s);
+        res = simpleDateFormat.format(date);
+        return res;
+    }
 }
