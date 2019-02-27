@@ -16,4 +16,8 @@ public class Lower extends UDF {
         return new Text(s.toString().toLowerCase());
     }
 
+    public static void main(String[] args) {
+        System.out.println(new Lower().evaluate(new Text("HIVe")));
+    }
+
 }
